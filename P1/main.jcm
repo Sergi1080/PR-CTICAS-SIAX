@@ -1,0 +1,4 @@
+mas main {
+    agent alice
+    agent bob
+}
