@@ -1,0 +1,16 @@
+mas holamundo {
+    agent alice {
+        focus: w.c1
+        roles: role1 in my_group
+    }
+    agent bob {
+        focus: w.c1
+        roles: role2 in my_group
+    }
+    workspace w {
+        artifact c1: example.Counter(3)
+    }
+    organisation o1 : org.xml {
+        group my_group: group1
+    }
+}
