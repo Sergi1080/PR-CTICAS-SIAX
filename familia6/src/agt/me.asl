@@ -127,13 +127,17 @@ es_pariente_de(X,Y) :-
 		!buscarFamilia;
 		.broadcast(tell, hi("Hola")).
 
-// Solo se comparten los hechos propios (source(self)), no los recibidos.
-+!compartir
-	<-	for ( es_padre_de(X,Y)[source(self)] ) {
-			.broadcast(tell, es_padre_de(X,Y))
-		};
-		for ( es_madre_de(X,Y)[source(self)] ) {
-			.broadcast(tell, es_madre_de(X,Y))
+// Cambio broadcast por una cadena lógica basada en .send, de forma que los padres se comunican con sus hijos informandoles sobre su herencia P (abuelo) y M (abuela)
++!compartir : yo(Me)
+	<-	for ( (es_padre_de(Me, H) | es_madre_de(Me, H)) ) {
+			// Le cuento a mi hijo H todos mis hechos propios de padre (abuelos y hermanos)
+			for ( es_padre_de(X, Y)[source(self)] ) {
+				.send(H, tell, es_padre_de(X, Y))
+			};
+			// Le cuento a mi hijo H todos mis hechos propios de madre
+			for ( es_madre_de(X, Y)[source(self)] ) {
+				.send(H, tell, es_madre_de(X, Y))
+			}
 		}.
 
 +!buscarFamilia : yo(Me)
@@ -148,8 +152,14 @@ es_pariente_de(X,Y) :-
 
 /* Events */
 
-+hi(_)[source(S)] : yo(Me) & S \== Me & es_pariente_de(S,Me)
-	<-	.println("Mi pariente ", S, " me saluda.").
+// Cuando recibo un dato nuevo de padre (que no sea mío inicial, S \== self), se lo paso a mis hijos
++es_padre_de(X,Y)[source(S)] : yo(Me) & S \== self
+	<-	for ( (es_padre_de(Me, H) | es_madre_de(Me, H)) ) {
+			.send(H, tell, es_padre_de(X,Y))
+		}.
 
-+hi(_)[source(S)] : yo(Me) & S \== Me
-	<-	.println(S, " me saluda, pero no es de mi familia.").
+// Cuando recibo un dato nuevo de madre, también se lo paso a mis hijos
++es_madre_de(X,Y)[source(S)] : yo(Me) & S \== self
+	<-	for ( (es_padre_de(Me, H) | es_madre_de(Me, H)) ) {
+			.send(H, tell, es_madre_de(X,Y))
+		}.
